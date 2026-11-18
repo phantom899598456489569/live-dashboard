@@ -3,184 +3,565 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Dashboard</title>
-
+<title>Live Dashboard — YouTube Live Player</title>
 <style>
-* {
-    box-sizing: border-box;
-}
+  :root {
+    --bg: #0a0a14;
+    --bg2: #0e0e1c;
+    --panel: #141428;
+    --panel2: #191936;
+    --border: #2a2a4a;
+    --text: #e8e8f2;
+    --muted: #9a9ab8;
+    --purple: #a855f7;
+    --purple2: #8b5cf6;
+    --purple-dim: #7c3aed;
+    --neon: 0 0 12px rgba(168, 85, 247, .55), 0 0 32px rgba(168, 85, 247, .25);
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+  }
 
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0b0b12;
-    color: white;
-}
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .logo-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--purple);
+    box-shadow: 0 0 10px var(--purple), 0 0 24px var(--purple);
+  }
+  .logo h1 { font-size: 19px; letter-spacing: .5px; }
+  .logo h1 span { color: var(--purple); }
+  .logo small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 1px; }
+  .nav-label { font-size: 11px; letter-spacing: 2px; color: var(--muted); padding: 14px 10px 6px; text-transform: uppercase; }
+  .nav-link {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 12px; border-radius: 10px; cursor: pointer;
+    color: var(--muted); font-size: 15px; border: 1px solid transparent;
+    transition: all .2s;
+  }
+  .nav-link:hover { color: var(--text); background: var(--panel); }
+  .nav-link.active {
+    color: #fff; background: var(--panel2);
+    border-color: var(--purple-dim);
+    box-shadow: inset 3px 0 0 var(--purple), var(--neon);
+  }
+  .nav-link .ico { font-size: 17px; width: 22px; text-align: center; }
+  .side-foot { margin-top: auto; padding: 12px 10px 0; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); line-height: 1.6; }
 
-header {
-    padding: 20px;
-    background: #15151f;
-    border-bottom: 1px solid #292938;
-}
+  /* ---------- Main ---------- */
+  .main { margin-left: 240px; padding: 26px 28px 40px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+  .topbar h2 { font-size: 24px; }
+  .topbar p { color: var(--muted); font-size: 14px; margin-top: 3px; }
+  .menu-btn {
+    display: none; background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 20px; padding: 6px 12px; cursor: pointer;
+  }
 
-header h1 {
-    margin: 0;
-    color: #a78bfa;
-}
+  /* Status pill */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #666; }
+  .dot.live { background: var(--purple); box-shadow: 0 0 10px var(--purple), 0 0 20px var(--purple); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-.container {
-    max-width: 900px;
-    margin: 30px auto;
-    padding: 20px;
-}
+  /* ---------- Cards / stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .stat:hover { border-color: var(--purple-dim); box-shadow: var(--neon); }
+  .stat .lbl { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .stat .val { font-size: 26px; font-weight: 700; margin-top: 8px; }
+  .stat .val.purple { color: var(--purple); text-shadow: 0 0 18px rgba(168,85,247,.6); }
+  .stat .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-.card {
-    background: #171722;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px; margin-bottom: 22px;
+  }
+  .card h3 { font-size: 17px; margin-bottom: 4px; }
+  .card .hint { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
 
-input {
-    width: 100%;
-    padding: 14px;
-    background: #0d0d16;
-    border: 1px solid #383849;
-    border-radius: 8px;
-    color: white;
-    margin: 10px 0;
-}
+  /* ---------- Player ---------- */
+  .url-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .url-row input {
+    flex: 1; min-width: 220px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 13px 15px; font-size: 15px; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .url-row input:focus { border-color: var(--purple); box-shadow: var(--neon); }
+  .btn {
+    border: none; border-radius: 10px; cursor: pointer;
+    padding: 13px 22px; font-size: 15px; font-weight: 600;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-load { background: var(--purple); color: #fff; box-shadow: var(--neon); }
+  .btn-load:hover { background: var(--purple2); }
+  .btn-stop { background: #23233d; color: var(--text); border: 1px solid var(--border); }
+  .btn-stop:hover { border-color: var(--red); color: var(--red); }
+  .btn-small { padding: 8px 14px; font-size: 13px; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+  .error { display: none; color: var(--red); font-size: 13px; margin-top: 10px; }
 
-button {
-    padding: 12px 20px;
-    background: #7c3aed;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    margin: 5px;
-}
+  .player-wrap {
+    position: relative; width: 100%; padding-top: 56.25%;
+    background: #000; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border); margin-top: 18px;
+  }
+  .player-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+  .player-empty {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; color: var(--muted);
+  }
+  .player-empty .big { font-size: 44px; }
+  .now-playing { display: none; margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .now-playing b { color: var(--text); }
+  .now-playing code { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; font-size: 13px; color: var(--purple); }
 
-button:hover {
-    background: #6d28d9;
-}
+  /* ---------- History ---------- */
+  .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .hist-item {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; transition: border-color .2s, box-shadow .2s;
+  }
+  .hist-item:hover { border-color: var(--purple-dim); box-shadow: var(--neon); }
+  .hist-item img { width: 100%; display: block; cursor: pointer; aspect-ratio: 16/9; object-fit: cover; }
+  .hist-body { padding: 12px; }
+  .hist-body .vid { font-size: 13px; color: var(--muted); word-break: break-all; }
+  .hist-body .date { font-size: 12px; color: var(--muted); margin: 5px 0 10px; }
+  .hist-actions { display: flex; gap: 8px; }
+  .empty-note { color: var(--muted); font-size: 14px; padding: 8px 0; }
 
-.player {
-    margin-top: 20px;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: black;
-    border-radius: 10px;
-    overflow: hidden;
-}
+  .view { display: none; }
+  .view.active { display: block; }
 
-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
+  .howto { line-height: 1.8; color: var(--muted); font-size: 14px; }
+  .howto b { color: var(--text); }
+  .howto li { margin-bottom: 8px; }
 
-.status {
-    color: #a78bfa;
-    margin-top: 15px;
-}
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 10px; }
 
-footer {
-    text-align: center;
-    color: #777;
-    padding: 20px;
-}
+  /* ---------- Stream Mode (for OBS capture) ---------- */
+  .stream-bar {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+    padding: 12px 20px; align-items: center; gap: 12px;
+    background: rgba(10, 10, 20, .88);
+    border-top: 1px solid var(--purple-dim);
+    font-size: 15px;
+  }
+  .stream-bar .live-badge {
+    background: var(--purple); color: #fff; font-weight: 700;
+    border-radius: 6px; padding: 4px 10px; letter-spacing: 1px;
+    box-shadow: var(--neon); animation: pulse 1.4s infinite;
+  }
+  body.stream-mode { overflow: hidden; }
+  body.stream-mode .sidebar, body.stream-mode .topbar,
+  body.stream-mode #view-dashboard, body.stream-mode #view-history,
+  body.stream-mode #view-howto, body.stream-mode .card .url-row,
+  body.stream-mode .card .hint, body.stream-mode .card h3,
+  body.stream-mode .now-playing, body.stream-mode footer { display: none !important; }
+  body.stream-mode .main { margin: 0; padding: 0; }
+  body.stream-mode #view-player { display: block !important; }
+  body.stream-mode #view-player .card { background: #000; border: none; border-radius: 0; padding: 0; margin: 0; }
+  body.stream-mode .player-wrap { border: none; border-radius: 0; margin: 0; height: 100vh; padding-top: 0; }
+  body.stream-mode .stream-bar { display: flex; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .sidebar {
+      transform: translateX(-100%); transition: transform .25s;
+      width: 250px; box-shadow: 0 0 40px rgba(0,0,0,.6);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 18px 16px 32px; }
+    .menu-btn { display: block; }
+    .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .topbar h2 { font-size: 20px; }
+  }
+  @media (max-width: 420px) {
+    .stats { grid-template-columns: 1fr; }
+    .btn { width: 100%; }
+  }
 </style>
 </head>
-
 <body>
 
-<header>
-    <h1>LIVE DASHBOARD</h1>
-</header>
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <h1>Live<span>Dashboard</span><small>YOUTUBE LIVE PLAYER</small></h1>
+  </div>
 
-<div class="container">
+  <div class="nav-label">Menu</div>
+  <div class="nav-link active" data-view="dashboard"><span class="ico">&#9783;</span> Dashboard</div>
+  <div class="nav-link" data-view="player"><span class="ico">&#9654;</span> Live Player</div>
+  <div class="nav-link" data-view="history"><span class="ico">&#128451;</span> Saved History</div>
+  <div class="nav-label">Help</div>
+  <div class="nav-link" data-view="howto"><span class="ico">&#63;</span> How to Use</div>
 
-    <div class="card">
-        <h2>YouTube Live Player</h2>
-        <p>Paste a YouTube video or livestream URL below.</p>
+  <div class="side-foot">
+    Status: <b id="sideStatus" style="color:#9a9ab8;">Offline</b><br>
+    No API key needed.<br>Free &amp; open — GitHub Pages ready.
+  </div>
+</aside>
 
-        <input
-            type="text"
-            id="youtubeUrl"
-            placeholder="Paste YouTube URL here..."
-        >
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <button class="menu-btn" id="menuBtn">&#9776;</button>
+      <h2 id="pageTitle">Dashboard Overview</h2>
+      <p>Monitor and play YouTube videos &amp; livestreams in one place.</p>
+    </div>
+    <div class="status-pill"><span class="dot" id="statusDot"></span><span id="statusText">OFFLINE</span></div>
+  </div>
 
-        <button onclick="loadVideo()">Load Video</button>
-        <button onclick="stopVideo()">Stop Player</button>
-
-        <div class="status" id="status">
-            Player is offline
-        </div>
-
-        <div class="player" id="player"></div>
+  <!-- ===== DASHBOARD VIEW ===== -->
+  <section class="view active" id="view-dashboard">
+    <div class="stats">
+      <div class="stat">
+        <div class="lbl">Stream Status</div>
+        <div class="val purple" id="statStatus">Offline</div>
+        <div class="sub" id="statStatusSub">No video loaded</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Videos Loaded</div>
+        <div class="val" id="statLoaded">0</div>
+        <div class="sub">This session</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Saved History</div>
+        <div class="val" id="statHistory">0</div>
+        <div class="sub">Stored in your browser</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Session Time</div>
+        <div class="val" id="statUptime">00:00</div>
+        <div class="sub">Since page opened</div>
+      </div>
     </div>
 
+    <div class="card">
+      <h3>Quick Load</h3>
+      <p class="hint">Paste any YouTube video, livestream, or Shorts link — then press Load Video.</p>
+      <div class="url-row">
+        <input type="text" id="urlInputDash" placeholder="https://www.youtube.com/watch?v=...  or  https://youtu.be/...">
+        <button class="btn btn-load" onclick="loadFrom('urlInputDash')">Load Video</button>
+      </div>
+      <div class="error" id="errorDash">Please paste a valid YouTube link or video ID.</div>
+    </div>
+
+    <div class="card">
+      <h3>Recent History</h3>
+      <p class="hint">Your last saved videos — click any thumbnail to play it again.</p>
+      <div class="history-grid" id="recentGrid"></div>
+      <p class="empty-note" id="recentEmpty">No videos saved yet. Load a video and it will appear here.</p>
+    </div>
+  </section>
+
+  <!-- ===== PLAYER VIEW ===== -->
+  <section class="view" id="view-player">
+    <div class="card">
+      <h3>YouTube Live Player</h3>
+      <p class="hint">Works with watch links, youtu.be links, /live/ links, Shorts, and plain video IDs.</p>
+      <div class="url-row">
+        <input type="text" id="urlInput" placeholder="Paste a YouTube video or livestream URL here...">
+        <button class="btn btn-load" onclick="loadFrom('urlInput')">Load Video</button>
+        <button class="btn btn-stop" onclick="stopPlayer()">Stop Player</button>
+        <button class="btn btn-stop" onclick="openStreamMode()">Stream Mode</button>
+      </div>
+      <div class="error" id="errorMsg">Please paste a valid YouTube link or video ID.</div>
+
+      <div class="player-wrap">
+        <div class="player-empty" id="playerEmpty">
+          <div class="big">&#9654;</div>
+          <div>Player is offline</div>
+          <div style="font-size:13px;">Load a video to start streaming</div>
+        </div>
+        <iframe id="playerFrame" style="display:none;" src=""
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
+
+      <div class="now-playing" id="nowPlaying">
+        Now playing: <b id="npTitle">—</b><br>
+        Video ID: <code id="npId">—</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HISTORY VIEW ===== -->
+  <section class="view" id="view-history">
+    <div class="card">
+      <h3>Saved Video History</h3>
+      <p class="hint">Every video you load is saved automatically in your browser (localStorage). Click Load to play again.</p>
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-ghost btn-small" onclick="clearHistory()">Clear All History</button>
+      </div>
+      <div class="history-grid" id="historyGrid"></div>
+      <p class="empty-note" id="historyEmpty">No videos saved yet. Load a video and it will appear here.</p>
+    </div>
+  </section>
+
+  <!-- ===== HOW TO VIEW ===== -->
+  <section class="view" id="view-howto">
+    <div class="card">
+      <h3>How to Use</h3>
+      <ol class="howto">
+        <li><b>Paste a link</b> — any YouTube watch, youtu.be, /live/, Shorts link, or just the 11-character video ID.</li>
+        <li><b>Press Load Video</b> — the player starts instantly and the video is saved to your history.</li>
+        <li><b>Stop Player</b> — stops playback and returns the status to Offline.</li>
+        <li><b>History</b> — click any saved thumbnail to reload that video, or remove it.</li>
+        <li><b>Live on your channel (OBS, free):</b> press <b>Stream Mode</b> — a clean full-screen page opens. Copy its link, then in OBS add a <b>Browser Source</b> with that link, paste your channel's stream key from YouTube Studio &rarr; Go live, and press <b>Start Streaming</b> in OBS. The channel is whichever stream key you paste.</li>
+        <li><b>Direct stream link:</b> you can also open the dashboard with <b>?live=1&amp;v=VIDEO_ID</b> at the end of the page URL — it opens straight in full-screen stream mode with that video playing. Example: <b>index.html?live=1&amp;v=dQw4w9WgXcQ</b></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>Live Dashboard &middot; Dark theme &middot; Purple neon &middot; Free forever</footer>
+</main>
+
+<!-- Stream-mode bottom bar (visible only in ?live=1 mode) -->
+<div class="stream-bar" id="streamBar">
+  <span class="live-badge">&#9679; LIVE</span>
+  <span>Live Dashboard</span>
+  <span style="color:var(--muted);" id="streamVideo">No video loaded</span>
 </div>
 
-<footer>
-    Live Dashboard | YouTube Embedded Player
-</footer>
-
 <script>
-function getVideoId(url) {
-    try {
-        var parsed = new URL(url);
+  var STORAGE_KEY = "ytLiveHistory";
+  var loadedCount = 0;
+  var startTime = Date.now();
+  var currentId = "";
 
-        if (parsed.hostname.indexOf("youtu.be") !== -1) {
-            return parsed.pathname.substring(1);
-        }
+  /* ---------- Helpers ---------- */
+  function $(id) { return document.getElementById(id); }
 
-        if (parsed.hostname.indexOf("youtube.com") !== -1) {
-            if (parsed.pathname === "/watch") {
-                return parsed.searchParams.get("v");
-            }
+  function parseVideoId(input) {
+    if (!input) return "";
+    var s = input.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s; // plain video ID
+    var m = s.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (m) return m[1];
+    m = s.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (m) return m[1];
+    m = s.match(/\/(embed|live|shorts|v)\/([a-zA-Z0-9_-]{11})/);
+    if (m) return m[2];
+    return "";
+  }
 
-            if (parsed.pathname.indexOf("/live/") === 0) {
-                return parsed.pathname.split("/live/")[1].split("/")[0];
-            }
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function saveHistory(list) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (e) {}
+  }
 
-            if (parsed.pathname.indexOf("/embed/") === 0) {
-                return parsed.pathname.split("/embed/")[1];
-            }
-        }
-
-        return null;
-    } catch (e) {
-        return null;
+  /* ---------- Status ---------- */
+  function setStatus(live) {
+    var dot = $("statusDot"), txt = $("statusText");
+    if (live) {
+      dot.className = "dot live"; txt.textContent = "STREAMING";
+      $("statStatus").textContent = "Streaming";
+      $("statStatusSub").textContent = "Video is playing";
+      $("sideStatus").textContent = "Streaming";
+      $("sideStatus").style.color = "#a855f7";
+    } else {
+      dot.className = "dot"; txt.textContent = "OFFLINE";
+      $("statStatus").textContent = "Offline";
+      $("statStatusSub").textContent = "No video loaded";
+      $("sideStatus").textContent = "Offline";
+      $("sideStatus").style.color = "#9a9ab8";
     }
-}
+  }
 
-function loadVideo() {
-    var url = document.getElementById("youtubeUrl").value;
-    var videoId = getVideoId(url);
+  /* ---------- Player ---------- */
+  function loadVideoById(videoId) {
+    var frame = $("playerFrame");
+    frame.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0";
+    frame.style.display = "block";
+    $("playerEmpty").style.display = "none";
+    $("nowPlaying").style.display = "block";
+    $("npTitle").textContent = "YouTube video";
+    $("npId").textContent = videoId;
+    currentId = videoId;
+    loadedCount++;
+    $("statLoaded").textContent = loadedCount;
+    $("streamVideo").textContent = "Now playing: " + videoId;
+    setStatus(true);
+    addToHistory(videoId);
+    showView("player");
+  }
 
-    if (!videoId) {
-        document.getElementById("status").innerHTML =
-            "Invalid YouTube URL";
-        return;
+  function loadFrom(inputId) {
+    var value = $(inputId).value;
+    var id = parseVideoId(value);
+    var err = inputId === "urlInput" ? $("errorMsg") : $("errorDash");
+    if (!id) { err.style.display = "block"; return; }
+    err.style.display = "none";
+    loadVideoById(id);
+  }
+
+  function stopPlayer() {
+    var frame = $("playerFrame");
+    frame.src = "";
+    frame.style.display = "none";
+    $("playerEmpty").style.display = "flex";
+    $("nowPlaying").style.display = "none";
+    currentId = "";
+    $("streamVideo").textContent = "No video loaded";
+    setStatus(false);
+  }
+
+  /* ---------- Stream Mode ---------- */
+  function getParam(name) {
+    var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(window.location.search);
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+  function openStreamMode() {
+    var url = window.location.pathname + "?live=1" + (currentId ? "&v=" + currentId : "");
+    window.open(url, "_blank");
+  }
+
+  /* ---------- History ---------- */
+  function addToHistory(videoId) {
+    var list = getHistory();
+    list = list.filter(function (item) { return item.id !== videoId; });
+    list.unshift({ id: videoId, date: new Date().toLocaleString() });
+    if (list.length > 24) list.length = 24;
+    saveHistory(list);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    var list = getHistory();
+    $("statHistory").textContent = list.length;
+
+    var grid = $("historyGrid");
+    grid.innerHTML = "";
+    $("historyEmpty").style.display = list.length ? "none" : "block";
+    list.forEach(function (item) {
+      grid.appendChild(historyCard(item));
+    });
+
+    var recent = $("recentGrid");
+    recent.innerHTML = "";
+    $("recentEmpty").style.display = list.length ? "none" : "block";
+    list.slice(0, 4).forEach(function (item) {
+      recent.appendChild(historyCard(item));
+    });
+  }
+
+  function historyCard(item) {
+    var div = document.createElement("div");
+    div.className = "hist-item";
+    var thumb = "https://img.youtube.com/vi/" + item.id + "/hqdefault.jpg";
+    div.innerHTML =
+      '<img src="' + thumb + '" alt="Video thumbnail" onclick="loadVideoById(\'' + item.id + '\')">' +
+      '<div class="hist-body">' +
+        '<div class="vid">ID: ' + item.id + '</div>' +
+        '<div class="date">' + item.date + '</div>' +
+        '<div class="hist-actions">' +
+          '<button class="btn btn-load btn-small" onclick="loadVideoById(\'' + item.id + '\')">Load</button>' +
+          '<button class="btn btn-ghost btn-small" onclick="removeFromHistory(\'' + item.id + '\')">Remove</button>' +
+        '</div>' +
+      '</div>';
+    return div;
+  }
+
+  function removeFromHistory(videoId) {
+    var list = getHistory().filter(function (item) { return item.id !== videoId; });
+    saveHistory(list);
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (!confirm("Clear all saved video history?")) return;
+    saveHistory([]);
+    renderHistory();
+  }
+
+  /* ---------- Navigation ---------- */
+  var TITLES = {
+    dashboard: "Dashboard Overview",
+    player: "Live Player",
+    history: "Saved History",
+    howto: "How to Use"
+  };
+  function showView(name) {
+    var views = document.querySelectorAll(".view");
+    for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
+    $("view-" + name).classList.add("active");
+    var links = document.querySelectorAll(".nav-link");
+    for (var j = 0; j < links.length; j++) {
+      links[j].classList.toggle("active", links[j].getAttribute("data-view") === name);
     }
+    $("pageTitle").textContent = TITLES[name] || "Dashboard";
+    $("sidebar").classList.remove("open");
+  }
+  var navLinks = document.querySelectorAll(".nav-link");
+  for (var k = 0; k < navLinks.length; k++) {
+    navLinks[k].addEventListener("click", function () {
+      showView(this.getAttribute("data-view"));
+    });
+  }
+  $("menuBtn").addEventListener("click", function () {
+    $("sidebar").classList.toggle("open");
+  });
 
-    document.getElementById("player").innerHTML =
-        '<iframe src="https://www.youtube.com/embed/' +
-        videoId +
-        '?autoplay=1" allowfullscreen></iframe>';
+  /* ---------- Enter key loads video ---------- */
+  $("urlInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") loadFrom("urlInput");
+  });
+  $("urlInputDash").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") loadFrom("urlInputDash");
+  });
 
-    document.getElementById("status").innerHTML =
-        "Player loaded";
-}
+  /* ---------- Session timer ---------- */
+  setInterval(function () {
+    var s = Math.floor((Date.now() - startTime) / 1000);
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    $("statUptime").textContent =
+      (m < 10 ? "0" + m : m) + ":" + (sec < 10 ? "0" + sec : sec);
+  }, 1000);
 
-function stopVideo() {
-    document.getElementById("player").innerHTML = "";
-    document.getElementById("status").innerHTML =
-        "Player is offline";
-}
+  /* ---------- Init ---------- */
+  setStatus(false);
+  renderHistory();
+  if (getParam("live") === "1") document.body.classList.add("stream-mode");
+  var autoId = parseVideoId(getParam("v") || "");
+  if (autoId) loadVideoById(autoId);
 </script>
-
 </body>
 </html>
